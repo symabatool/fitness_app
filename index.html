@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Log Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+            margin: 0;
+            padding: 2rem;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        input,
+        select,
+        textarea,
+        button {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        ul {
+            list-style: none;
+            padding: 0;
+            max-width: 800px;
+            margin: auto;
+        }
+        
+        li {
+            background: white;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Fitness Log Tracker</h1>
+    <form id="logForm">
+        <input type="text" id="activity" placeholder="Activity" required>
+        <input type="number" id="duration" placeholder="Duration (min)" required>
+        <select id="intensity">
+        <option value="">Intensity</option>
+        <option value="Low">Low</option>
+        <option value="Moderate">Moderate</option>
+        <option value="High">High</option>
+    </select>
+        <select id="mood">
+    <option value="">Mood</option>
+    <option value="Happy">Happy</option>
+    <option value="Tired">Tired</option>
+    <option value="Energetic">Energetic</option>
+    <option value="Relaxed">Relaxed</option>
+</select>
+        <input type="number" id="calories" placeholder="Calories Burned">
+        <textarea id="notes" placeholder="Notes" rows="2"></textarea>
+        <button type="submit">Add Log</button>
+    </form>
+
+    <ul id="logList"></ul>
+
+    <script>
+        const API_URL = "http://localhost:8000/logs";
+
+        const form = document.getElementById("logForm");
+        const logList = document.getElementById("logList");
+
+        async function fetchLogs() {
+            const res = await fetch(API_URL);
+            const logs = await res.json();
+            logList.innerHTML = "";
+            logs.forEach(log => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+        <div>
+        <strong>${log.activity}</strong> - ${log.duration} min<br/>
+        Intensity: ${log.intensity || "N/A"} | Mood: ${log.mood || "N/A"}<br/>
+        Calories: ${log.calories_burned || 0}<br/>
+        Notes: ${log.notes || "None"}
+        </div>
+        <button class="delete-btn" onclick="deleteLog(${log.id})">Delete</button>
+        `;
+                logList.appendChild(li);
+            });
+        }
+
+        async function deleteLog(id) {
+            await fetch(`${API_URL}/${id}`, {
+                method: "DELETE"
+            });
+            fetchLogs();
+        }
+
+        form.addEventListener("submit", async(e) => {
+            e.preventDefault();
+            const entry = {
+                activity: document.getElementById("activity").value,
+                duration: parseInt(document.getElementById("duration").value),
+                intensity: document.getElementById("intensity").value,
+                mood: document.getElementById("mood").value,
+                calories_burned: parseInt(document.getElementById("calories").value) || 0,
+                notes: document.getElementById("notes").value
+            };
+            await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(entry)
+            });
+            form.reset();
+            fetchLogs();
+        });
+
+        fetchLogs();
+    </script>
+</body>
+
+</html>
